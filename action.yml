@@ -1,0 +1,18 @@
+name: Verify Environment
+description: Verifies that the provided environment name is a valid environment name
+inputs:
+  environment:
+    description: The environment name
+    required: true
+  token:
+    description: The github token to authenticate with
+    required: true
+  dont-fail-build:
+    description: If verification fails indicates if the output should indicate a failure or not
+    required: false
+outputs:
+  environment:
+    description: The verified environment name, or null if verification failed.
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
