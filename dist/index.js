@@ -39,14 +39,14 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__webpack_require__(186));
 const github_1 = __webpack_require__(438);
 function run() {
-    var _a, _b;
+    var _a;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             let dontFailBuild;
             try {
                 dontFailBuild = JSON.parse(core.getInput('dont-fail-build', { required: false }).toLowerCase());
             }
-            catch (_c) {
+            catch (_b) {
                 dontFailBuild = false;
             }
             let environment = (_a = core
@@ -64,12 +64,15 @@ function run() {
                 }
             }
             else {
-                const client = github_1.getOctokit(core.getInput('token', { required: true }));
-                const envs = yield client.repos.getAllEnvironments({
+                const client = (0, github_1.getOctokit)(core.getInput('token', { required: true }));
+                const environmentNames = [];
+                yield client
+                    .paginate('GET /repos/{owner}/{repo}/environments', {
                     owner: github_1.context.repo.owner,
                     repo: github_1.context.repo.repo
-                });
-                if (!((_b = envs.data.environments) === null || _b === void 0 ? void 0 : _b.find(e => e.name === environment || e.name.startsWith(`${environment}-`)))) {
+                })
+                    .then(data => data.map((e) => environmentNames.push(e.name)));
+                if (!environmentNames.find(e => e === environment || e.startsWith(`${environment}-`))) {
                     const message = `${environment} is not a valid environment name`;
                     environment = null;
                     if (!dontFailBuild) {
@@ -83,7 +86,7 @@ function run() {
             core.setOutput('environment', environment);
         }
         catch (error) {
-            core.setFailed(`$An error occured while verifying the environment: ${error.message}`);
+            core.setFailed(`$An error occurred while verifying the environment: ${error.message}`);
         }
     });
 }

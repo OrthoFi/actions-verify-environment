@@ -27,13 +27,20 @@ async function run(): Promise<void> {
       }
     } else {
       const client = getOctokit(core.getInput('token', {required: true}))
-      const envs = await client.repos.getAllEnvironments({
-        owner: context.repo.owner,
-        repo: context.repo.repo
-      })
+      const environmentNames: string[] = []
+      await client
+        .paginate('GET /repos/{owner}/{repo}/environments', {
+          owner: context.repo.owner,
+          repo: context.repo.repo
+        })
+        .then(data =>
+          (data as any[]).map((e: {name: string}) =>
+            environmentNames.push(e.name)
+          )
+        )
       if (
-        !envs.data.environments?.find(
-          e => e.name === environment || e.name.startsWith(`${environment}-`)
+        !environmentNames.find(
+          e => e === environment || e.startsWith(`${environment}-`)
         )
       ) {
         const message = `${environment} is not a valid environment name`
@@ -48,9 +55,9 @@ async function run(): Promise<void> {
     }
 
     core.setOutput('environment', environment)
-  } catch (error) {
+  } catch (error: any) {
     core.setFailed(
-      `$An error occured while verifying the environment: ${error.message}`
+      `$An error occurred while verifying the environment: ${error.message}`
     )
   }
 }
